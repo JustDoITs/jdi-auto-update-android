@@ -27,16 +27,11 @@ dependencies {
 ## 简单使用
 
 ```java
-	new UpdateAppManager
-                .Builder()
-                //当前Activity
-                .setActivity(this)
-                //更新地址
-                .setUpdateUrl(mUpdateUrl)
-                //实现httpManager接口的对象
-                .setHttpManager(new UpdateAppHttpUtil())
+new AutoUpdateManager.Builder()
+                .setContext(this)
+                .setJsonUrl("http://git.jx-cloud.cc/release/smartclass-teacher-android/raw/master/update.json")
                 .build()
-                .update();
+                .execute();
 ```
  
 ## 服务端
