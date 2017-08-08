@@ -26,15 +26,7 @@ dependencies {
 
 ## 简单使用
 
-```java
-new AutoUpdateManager.Builder()
-                .setContext(this)
-                .setJsonUrl("http://git.jx-cloud.cc/release/smartclass-teacher-android/raw/master/update.json")
-                .build()
-                .execute();
-```
- 
-## 服务端
+### 服务器 update.json
 
 ```json
 {
@@ -46,6 +38,16 @@ new AutoUpdateManager.Builder()
   "md5":"db2e7e39fe3d5501c9b64fce2865f73d"
 }
 ```
+### android 使用
+```java
+new AutoUpdateManager.Builder()
+                .setContext(this)
+                .setJsonUrl("http://git.jx-cloud.cc/release/smartclass-teacher-android/raw/master/update.json")
+                .build()
+                .execute();
+```
+ 
+
 
 
 ## License
