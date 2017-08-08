@@ -1,5 +1,5 @@
 # jdi-auto-update-android
-Super duper easy way to auto update your Android app,
+Super duper easy way to auto update your android app,
 and auto update checker,download and install apk file.
 
 ## 目录
