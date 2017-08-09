@@ -37,7 +37,7 @@ dependencies {
 
 ```json
 {
-  "versionCode": 2,
+  "versionCode": 2,    //重点：通过此项与本地 app versionCode 比较是否有新版本。
   "versionName": "0.2.1",
   "url": "http://www.your-website.com/xxx-100-20170803-03_18_13.apk",
   "msg": "1，添加删除信用卡接口。\r\n2，添加vip认证。\r\n3，区分自定义消费，一个小时不限制。\r\n4，添加放弃任务接口，小时内不生成。\r\n5，消费任务手动生成。",
