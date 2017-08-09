@@ -1,9 +1,12 @@
 # jdi-auto-update-android
-Super duper easy way to auto update your android app,
-and auto update checker,download and install apk file.
 
 [![License](https://img.shields.io/badge/license-Apache%202-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Package Control](https://img.shields.io/packagecontrol/dt/GitGutter.svg)]()
+
+
+Super duper easy way to auto update your android app,
+and auto update checker,download and install apk file.
+
 
 ## 目录
 
