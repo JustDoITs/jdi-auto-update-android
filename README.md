@@ -2,6 +2,10 @@
 Super duper easy way to auto update your android app,
 and auto update checker,download and install apk file.
 
+[![License](https://img.shields.io/badge/license-Apache%202-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Download](https://jcenter.bintray.com/com/xulaoyao/android/jdi/autoupdate/0.1.0/:autoupdate-0.1.0.aar) ](https://jcenter.bintray.com/com/xulaoyao/android/jdi/autoupdate/0.1.0/)
+
+
 ## 目录
 
 * [功能介绍](#功能介绍)
