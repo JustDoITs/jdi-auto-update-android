@@ -45,7 +45,18 @@ dependencies {
   "md5":"db2e7e39fe3d5501c9b64fce2865f73d"
 }
 ```
+
+
 ### android 使用
+
++ 配置服务 (AndroidManifest.xml)
+
+```xml
+     <!--自动更新库服务-->
+     <service android:name="com.xulaoyao.android.jdi.autoupdate.service.DownloadService" android:exported="true"/>
+```
+
++ 代码：
 ```java
 new AutoUpdateManager.Builder()
                 .setContext(this)
