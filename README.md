@@ -52,8 +52,8 @@ dependencies {
 + 配置服务 (AndroidManifest.xml)
 
 ```xml
-     <!--自动更新库服务-->
-     <service android:name="com.xulaoyao.android.jdi.autoupdate.service.DownloadService" android:exported="true"/>
+<!--自动更新库服务-->
+<service android:name="com.xulaoyao.android.jdi.autoupdate.service.DownloadService" android:exported="true"/>
 ```
 
 + 代码：
