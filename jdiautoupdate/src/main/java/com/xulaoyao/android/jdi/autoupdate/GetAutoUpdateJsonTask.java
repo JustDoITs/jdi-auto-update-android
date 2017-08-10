@@ -4,20 +4,25 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.xulaoyao.android.jdi.autoupdate.http.GetAutoUpdateJsonManager;
 import com.xulaoyao.android.jdi.autoupdate.http.IAutoUpdateCallback;
+import com.xulaoyao.android.jdi.autoupdate.utils.LruCacheUtils;
+import com.xulaoyao.android.jdi.autoupdate.utils.Md5Utils;
 
 /**
  * Created by renwoxing on 2017/8/7.
  */
 
-public class GetAutoUpdateJsonTask extends AsyncTask<Void,Void,String> {
+public class GetAutoUpdateJsonTask extends AsyncTask<Void, Void, String> {
+
+    private static final String TAG = GetAutoUpdateJsonTask.class.getSimpleName();
 
     private ProgressDialog dialog;
     private Context mContext;
     private boolean mShowProgressDialog;
-    //private static final String url = Constants.UPDATE_URL;
+
 
     private IAutoUpdateCallback mCallback;
 
@@ -50,25 +55,35 @@ public class GetAutoUpdateJsonTask extends AsyncTask<Void,Void,String> {
         }
 
         if (!TextUtils.isEmpty(result)) {
+            //本地写入缓存
+            //CacheUtils.newInstance(mContext).saveJsonToCache(Md5Utils.hashKeyFormUrl(mJsonUrl), result);
+            //内存缓存写入
+            LruCacheUtils.newInstance(mContext).addJsonToCache(Md5Utils.hashKeyFormUrl(mJsonUrl), result);
             this.mCallback.onCompleted(GetAutoUpdateJsonManager.parseJson(result));
-        }else {
+        } else {
             this.mCallback.onFailed("没有获取到 Auto update json.");
         }
     }
 
     @Override
-    protected void onCancelled(){
+    protected void onCancelled() {
         this.mCallback.onFailed("放弃获取 Auto update json.");
     }
 
 
-
-
-
-
-
     @Override
     protected String doInBackground(Void... voids) {
-        return GetAutoUpdateJsonManager.get(mJsonUrl);
+        // TODO: 2017/8/9 需要定时清除缓存
+        //本地缓存获取
+        //String cacheJson = CacheUtils.newInstance(mContext).getJson(Md5Utils.hashKeyFormUrl(mJsonUrl));
+        //内存缓存
+        String cacheJson = LruCacheUtils.newInstance(mContext).getJsonFromCache(Md5Utils.hashKeyFormUrl(mJsonUrl));
+        if (!TextUtils.isEmpty(cacheJson)) {
+            Log.d(TAG, "从 cache 中 获取json 内容: \n" + cacheJson);
+            return cacheJson;
+        } else {
+            Log.d(TAG, "从 服务器获取json 内容");
+            return GetAutoUpdateJsonManager.get(mJsonUrl);
+        }
     }
 }

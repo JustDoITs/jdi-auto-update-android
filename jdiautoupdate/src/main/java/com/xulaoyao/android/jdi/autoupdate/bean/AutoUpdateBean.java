@@ -88,7 +88,6 @@ public class AutoUpdateBean implements Serializable {
 
     /**********以下是内部使用的数据**********/
 
-    private boolean mHideDialog;
     private boolean mShowIgnoreVersion;
     private boolean mDismissNotificationProgress;
     private boolean mOnlyWifi;
@@ -119,13 +118,6 @@ public class AutoUpdateBean implements Serializable {
         mOnlyWifi = onlyWifi;
     }
 
-    public boolean isHideDialog() {
-        return mHideDialog;
-    }
-
-    public void setHideDialog(boolean hideDialog) {
-        mHideDialog = hideDialog;
-    }
 
 
 }

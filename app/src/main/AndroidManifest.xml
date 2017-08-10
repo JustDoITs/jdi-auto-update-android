@@ -17,9 +17,9 @@
             </intent-filter>
         </activity>
 
-        <!--<service-->
-            <!--android:name="com.xulaoyao.android.jdi.autoupdate.service.DownloadService"-->
-            <!--android:exported="true" />-->
+        <service
+            android:name="com.xulaoyao.android.jdi.autoupdate.service.DownloadService"
+            android:exported="true" />
     </application>
 
 </manifest>

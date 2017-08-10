@@ -1,13 +1,14 @@
 package com.xulaoyao.android.jdi.autoupdate;
 
 import android.content.Context;
+import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.xulaoyao.android.jdi.autoupdate.bean.AutoUpdateBean;
 import com.xulaoyao.android.jdi.autoupdate.http.IAutoUpdateCallback;
 import com.xulaoyao.android.jdi.autoupdate.utils.AutoUpdateAppUtils;
-import com.xulaoyao.android.jdi.autoupdate.view.AutoUpdateDialog;
+import com.xulaoyao.android.jdi.autoupdate.view.AutoUpdateDialogFragment;
 
 /**
  * Created by renwoxing on 2017/8/4.
@@ -22,12 +23,13 @@ public class AutoUpdateManager {
     private String mJsonUrl;
 
 
-    private boolean mHideDialog;
+
     private boolean mShowIgnoreVersion;
     private boolean mDismissNotificationProgress;
     private boolean mOnlyWifi;
 
     private AutoUpdateBean mUpdateApp;
+
 
     //private IAutoUpdateCallback mCallback;
 
@@ -35,7 +37,6 @@ public class AutoUpdateManager {
     private AutoUpdateManager(Builder builder) {
         mContext = builder.getContext();
         mJsonUrl = builder.getJsonUrl();
-        mHideDialog = builder.isHideDialog();
         mShowIgnoreVersion = builder.isShowIgnoreVersion();
         mDismissNotificationProgress = builder.isDismissNotificationProgress();
         mOnlyWifi = builder.isOnlyWifi();
@@ -47,7 +48,6 @@ public class AutoUpdateManager {
      */
     public AutoUpdateBean fillUpdateAppData() {
         if (mUpdateApp != null) {
-            mUpdateApp.setHideDialog(mHideDialog);
             mUpdateApp.showIgnoreVersion(mShowIgnoreVersion);
             mUpdateApp.dismissNotificationProgress(mDismissNotificationProgress);
             mUpdateApp.setOnlyWifi(mOnlyWifi);
@@ -92,7 +92,11 @@ public class AutoUpdateManager {
         }
         if (autoUpdateBean.getVersionCode() > AutoUpdateAppUtils.getVersionCode(mContext)) {
             Log.d(TAG,"有新本版本更新："+autoUpdateBean.getVersionCode()+"|"+autoUpdateBean.getVersionName()+"\n"+autoUpdateBean.getMsg());
-            AutoUpdateDialog.show(mContext, autoUpdateBean);
+            // Done: 2017/8/9 new 此对象时 原对象没有释放，造成泄漏
+            //AutoUpdateDialog.show(mContext, autoUpdateBean);
+            //fix bug
+            AutoUpdateDialogFragment mAutoUpdateDialogFragment = AutoUpdateDialogFragment.newInstance(autoUpdateBean);
+            mAutoUpdateDialogFragment.show(((FragmentActivity)mContext).getSupportFragmentManager(),mJsonUrl);
         }
         else {
             //Toast.makeText(mContext, mContext.getString(R.string.android_auto_update_toast_no_new_update), Toast.LENGTH_SHORT).show();
@@ -107,8 +111,6 @@ public class AutoUpdateManager {
         //必须有  更新json url
         private String mJsonUrl;
 
-        //是否隐藏对话框下载进度条
-        private boolean mHideDialog;
         private boolean mShowIgnoreVersion;
         private boolean dismissNotificationProgress;
         private boolean mOnlyWifi;
@@ -155,24 +157,6 @@ public class AutoUpdateManager {
                 throw new NullPointerException("必要参数不能为空");
             }
             return new AutoUpdateManager(this);
-        }
-
-        /**
-         * 是否隐藏对话框下载进度条
-         *
-         * @param b 是否隐藏对话框下载进度条
-         * @return Builder builder
-         */
-        public Builder hideDialogOnDownloading(boolean b) {
-            mHideDialog = b;
-            return this;
-        }
-
-        /**
-         * @return 是否影藏对话框
-         */
-        public boolean isHideDialog() {
-            return mHideDialog;
         }
 
         /**
