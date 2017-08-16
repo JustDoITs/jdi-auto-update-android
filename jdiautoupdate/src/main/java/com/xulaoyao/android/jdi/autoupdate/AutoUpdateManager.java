@@ -63,7 +63,7 @@ public class AutoUpdateManager {
      */
     public void execute() {
         if (mContext != null) {
-            new GetAutoUpdateJsonTask(mContext, true, mJsonUrl, new IAutoUpdateCallback() {
+            new GetAutoUpdateJsonTask(mContext, !mDismissNotificationProgress, mJsonUrl, new IAutoUpdateCallback() {
                 @Override
                 public void onCompleted(AutoUpdateBean autoUpdateBean) {
                     //成功获取json
