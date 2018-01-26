@@ -65,7 +65,26 @@ new AutoUpdateManager.Builder()
                 .execute();
 ```
  
+### android 7.0 上适配
 
+```
+     android:allowBackup="true"
+        android:label="@string/app_name"
+        android:supportsRtl="true">
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+
+```
 
 
 ## License

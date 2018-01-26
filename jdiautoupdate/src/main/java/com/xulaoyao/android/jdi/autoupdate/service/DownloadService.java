@@ -5,8 +5,10 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.Builder;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 
 import com.xulaoyao.android.jdi.autoupdate.bean.AutoUpdateBean;
@@ -164,9 +166,14 @@ public class DownloadService extends IntentService {
             builder.start();
         } catch (IOException ignored) {
         }
-        intent.setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive");
-
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (Build.VERSION.SDK_INT >= 24) { //7.0以上 适配
+            Uri apkUri = FileProvider.getUriForFile(getApplicationContext(), getApplication().getPackageName()+".fileprovider", apkFile);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        } else {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive");
+        }
         startActivity(intent);
 
     }
