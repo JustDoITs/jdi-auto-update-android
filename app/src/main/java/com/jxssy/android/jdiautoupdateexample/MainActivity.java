@@ -15,7 +15,7 @@ public class MainActivity extends AppCompatActivity {
 
         new AutoUpdateManager.Builder()
                 .setContext(this)
-                .setJsonUrl("http://git.jx-cloud.cc/release/smartclass-teacher-android/raw/master/update.json")
+                .setJsonUrl("http://jxc-app.oss-cn-shenzhen.aliyuncs.com/download/jxonline_app/android/update.json")
                 .build()
                 .execute();
 
