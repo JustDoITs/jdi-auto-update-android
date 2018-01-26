@@ -26,7 +26,7 @@ and auto update checker,download and install apk file.
 
 ```gradle
 dependencies {
-    compile 'com.xulaoyao.android.jdi:autoupdate:1.0.0'
+    compile 'com.xulaoyao.android.jdi:autoupdate:1.0.1'
 }
 ```
 
