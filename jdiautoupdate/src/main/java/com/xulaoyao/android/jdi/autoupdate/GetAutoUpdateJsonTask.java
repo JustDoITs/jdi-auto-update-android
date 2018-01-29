@@ -22,6 +22,7 @@ public class GetAutoUpdateJsonTask extends AsyncTask<Void, Void, String> {
     private ProgressDialog dialog;
     private Context mContext;
     private boolean mShowProgressDialog;
+    private boolean mShowLoading = false;
 
 
     private IAutoUpdateCallback mCallback;
@@ -29,17 +30,26 @@ public class GetAutoUpdateJsonTask extends AsyncTask<Void, Void, String> {
     private String mJsonUrl;
 
     GetAutoUpdateJsonTask(Context context, boolean showProgressDialog, String jsonUrl, IAutoUpdateCallback callback) {
-
         this.mContext = context;
         this.mShowProgressDialog = showProgressDialog;
         this.mJsonUrl = jsonUrl;
         this.mCallback = callback;
-
     }
 
+    GetAutoUpdateJsonTask(Context context,boolean showLoading, boolean showProgressDialog, String jsonUrl, IAutoUpdateCallback callback) {
+        this.mContext = context;
+        this.mShowProgressDialog = showProgressDialog;
+        this.mJsonUrl = jsonUrl;
+        this.mCallback = callback;
+        this.mShowLoading = showLoading;
+    }
+
+    public void setShowLoading(boolean showLoading) {
+        this.mShowLoading = showLoading;
+    }
 
     protected void onPreExecute() {
-        if (mShowProgressDialog) {
+        if (mShowLoading) {
             dialog = new ProgressDialog(mContext);
             dialog.setMessage(mContext.getString(R.string.android_auto_update_dialog_checking));
             dialog.show();

@@ -23,10 +23,10 @@ public class AutoUpdateManager {
     private String mJsonUrl;
 
 
-
     private boolean mShowIgnoreVersion;
     private boolean mDismissNotificationProgress;
     private boolean mOnlyWifi;
+    private boolean showLoading = false;
 
     private AutoUpdateBean mUpdateApp;
 
@@ -40,6 +40,7 @@ public class AutoUpdateManager {
         mShowIgnoreVersion = builder.isShowIgnoreVersion();
         mDismissNotificationProgress = builder.isDismissNotificationProgress();
         mOnlyWifi = builder.isOnlyWifi();
+        showLoading = builder.showLoadingUpdate;
     }
 
 
@@ -63,7 +64,7 @@ public class AutoUpdateManager {
      */
     public void execute() {
         if (mContext != null) {
-            new GetAutoUpdateJsonTask(mContext, !mDismissNotificationProgress, mJsonUrl, new IAutoUpdateCallback() {
+            new GetAutoUpdateJsonTask(mContext, showLoading, mDismissNotificationProgress, mJsonUrl, new IAutoUpdateCallback() {
                 @Override
                 public void onCompleted(AutoUpdateBean autoUpdateBean) {
                     //成功获取json
@@ -91,16 +92,15 @@ public class AutoUpdateManager {
             return;
         }
         if (autoUpdateBean.getVersionCode() > AutoUpdateAppUtils.getVersionCode(mContext)) {
-            Log.d(TAG,"有新本版本更新："+autoUpdateBean.getVersionCode()+"|"+autoUpdateBean.getVersionName()+"\n"+autoUpdateBean.getMsg());
+            Log.d(TAG, "有新本版本更新：" + autoUpdateBean.getVersionCode() + "|" + autoUpdateBean.getVersionName() + "\n" + autoUpdateBean.getMsg());
             // Done: 2017/8/9 new 此对象时 原对象没有释放，造成泄漏
             //AutoUpdateDialog.show(mContext, autoUpdateBean);
             //fix bug
             AutoUpdateDialogFragment mAutoUpdateDialogFragment = AutoUpdateDialogFragment.newInstance(autoUpdateBean);
-            mAutoUpdateDialogFragment.show(((FragmentActivity)mContext).getSupportFragmentManager(),mJsonUrl);
-        }
-        else {
+            mAutoUpdateDialogFragment.show(((FragmentActivity) mContext).getSupportFragmentManager(), mJsonUrl);
+        } else {
             //Toast.makeText(mContext, mContext.getString(R.string.android_auto_update_toast_no_new_update), Toast.LENGTH_SHORT).show();
-            Log.d(TAG,"没有新版本！");
+            Log.d(TAG, "没有新版本！");
         }
     }
 
@@ -114,6 +114,7 @@ public class AutoUpdateManager {
         private boolean mShowIgnoreVersion;
         private boolean dismissNotificationProgress;
         private boolean mOnlyWifi;
+        private boolean showLoadingUpdate;
 
 
         public Context getContext() {
@@ -180,6 +181,17 @@ public class AutoUpdateManager {
          */
         public Builder dismissNotificationProgress() {
             dismissNotificationProgress = true;
+            return this;
+        }
+
+        /**
+         * 显示 loading update
+         *
+         * @param show
+         * @return
+         */
+        public Builder setShowLoadingUpdate(Boolean show) {
+            showLoadingUpdate = show;
             return this;
         }
 
