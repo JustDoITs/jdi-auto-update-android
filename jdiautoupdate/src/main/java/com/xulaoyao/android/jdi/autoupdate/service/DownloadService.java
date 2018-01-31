@@ -9,6 +9,7 @@ import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.Builder;
 import android.support.v4.content.FileProvider;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.xulaoyao.android.jdi.autoupdate.bean.AutoUpdateBean;
@@ -24,6 +25,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static com.xulaoyao.android.jdi.autoupdate.config.Constants.DOWNLOAD_SERVICE_ACTION_AUTO_DOWNLOAD_APK;
 import static com.xulaoyao.android.jdi.autoupdate.config.Constants.DOWNLOAD_SERVICE_APK_AUTO_UPDATE_BUFFER_SIZE;
 
 
@@ -41,6 +43,7 @@ public class DownloadService extends IntentService {
     private Builder mBuilder;
 
     private AutoUpdateBean mAutoUpdateBean;
+    private boolean mSilentDownload = false;
 
 
     public DownloadService() {
@@ -55,26 +58,37 @@ public class DownloadService extends IntentService {
      */
     @Override
     protected void onHandleIntent(Intent intent) {
+        if (intent != null) {
+            final String action = intent.getAction();
+            if (DOWNLOAD_SERVICE_ACTION_AUTO_DOWNLOAD_APK.equals(action)) {
+                try {
+                    mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    mBuilder = new NotificationCompat.Builder(this);
 
-        try {
-            mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            mBuilder = new NotificationCompat.Builder(this);
+                    String appName = getString(getApplicationInfo().labelRes);
+                    int icon = getApplicationInfo().icon;
+                    mBuilder.setContentTitle(appName).setSmallIcon(icon);
+                    //mBuilder.setContentTitle("自动更新").setSmallIcon(R.mipmap.ic_launcher);
+                } catch (Exception e) {
+                }
+                mAutoUpdateBean = (AutoUpdateBean) intent.getParcelableExtra(Constants.DOWNLOAD_SERVICE_APK_AUTO_UPDATE_BEAN);
+                mSilentDownload = (Boolean) intent.getBooleanExtra(Constants.DOWNLOAD_SERVICE_APK_AUTO_DOWNLOAD, false);
+                if (mAutoUpdateBean != null) {
+                    downloadApk();
+                }
+            }
+        }
+    }
 
-            String appName = getString(getApplicationInfo().labelRes);
-            int icon = getApplicationInfo().icon;
-            mBuilder.setContentTitle(appName).setSmallIcon(icon);
-            //mBuilder.setContentTitle("自动更新").setSmallIcon(R.mipmap.ic_launcher);
-        }
-        catch (Exception e){
-        }
-        mAutoUpdateBean = (AutoUpdateBean) intent.getSerializableExtra(Constants.DOWNLOAD_SERVICE_APK_AUTO_UPDATE_BEAN);
+    private boolean retry = true;
+
+    private void downloadApk() {
         InputStream in = null;
         FileOutputStream out = null;
         try {
 
             URL url = new URL(mAutoUpdateBean.getUrl());
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-
             urlConnection.setRequestProperty("User-Agent", " Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36");
             // 设置是否使用缓存  默认是true
             urlConnection.setUseCaches(true);
@@ -89,7 +103,7 @@ public class DownloadService extends IntentService {
 
             urlConnection.connect();
             long _byte_total = urlConnection.getContentLength();  //进度计算
-            _byte_total = _byte_total==-1 ? mAutoUpdateBean.getSize() : _byte_total;
+            _byte_total = _byte_total == -1 ? mAutoUpdateBean.getSize() : _byte_total;
             //long _byte_total = Long.parseLong(urlConnection.getHeaderField("Content-Length"));  //进度计算
             long _byte_sum_current = 0;                                   //进度
             int len = 0;
@@ -104,7 +118,7 @@ public class DownloadService extends IntentService {
             while ((len = in.read(buffer)) != -1) {
                 _byte_sum_current += len;
                 out.write(buffer, 0, len);
-                Log.d(TAG, String.format("current:%s/total:%s", _byte_sum_current, _byte_total));
+                //Log.d(TAG, String.format("current:%s/total:%s", _byte_sum_current, _byte_total));
                 int progress = (int) (_byte_sum_current * 100L / _byte_total);
                 // 如果进度与之前进度相等，则不更新，如果更新太频繁，否则会造成界面卡顿
                 if (progress != oldProgress) {
@@ -113,12 +127,25 @@ public class DownloadService extends IntentService {
                 oldProgress = progress;
             }
 
-            // 下载完成 
+            // 下载完成
             // done: 2017/8/8 需要判断与检测是否完整
             if (checkApkCompleted(apkFile)) {
-                installApk(apkFile);
+                Log.d(TAG, "  download service completed! apk file path :" + apkFile.getAbsolutePath());
+                if (mSilentDownload) {
+                    //通过本地广播 回传
+                    Intent localIntent = new Intent(Constants.DOWNLOAD_SERVICE_DOWNLOAD_COMPLETED_BROADCAST_ACTION)
+                            .putExtra(Constants.DOWNLOAD_SERVICE_DOWNLOAD_COMPLETED_DATA_APK_FILE_PATH, apkFile.getAbsolutePath());
+                    // Broadcasts the Intent to receivers in this app.
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+                } else {
+                    installApk(apkFile);
+                }
             } else {
                 // TODO: 2017/8/8 需要重试机制
+                if (retry) {
+                    retry = false;
+                    downloadApk();
+                }
             }
             mNotifyManager.cancel(NOTIFICATION_ID);
 
@@ -144,7 +171,6 @@ public class DownloadService extends IntentService {
         }
     }
 
-
     /******************* 私有方法 *********************/
 
     private void updateProgress(int progress) {
@@ -167,7 +193,7 @@ public class DownloadService extends IntentService {
         } catch (IOException ignored) {
         }
         if (Build.VERSION.SDK_INT >= 24) { //7.0以上 适配
-            Uri apkUri = FileProvider.getUriForFile(getApplicationContext(), getApplication().getPackageName()+".fileprovider", apkFile);
+            Uri apkUri = FileProvider.getUriForFile(getApplicationContext(), getApplication().getPackageName() + ".fileprovider", apkFile);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
         } else {
@@ -175,7 +201,6 @@ public class DownloadService extends IntentService {
             intent.setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive");
         }
         startActivity(intent);
-
     }
 
 

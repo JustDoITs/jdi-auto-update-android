@@ -1,14 +1,26 @@
 package com.xulaoyao.android.jdi.autoupdate;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.xulaoyao.android.jdi.autoupdate.bean.AutoUpdateBean;
+import com.xulaoyao.android.jdi.autoupdate.config.Constants;
 import com.xulaoyao.android.jdi.autoupdate.http.IAutoUpdateCallback;
+import com.xulaoyao.android.jdi.autoupdate.service.DownloadService;
 import com.xulaoyao.android.jdi.autoupdate.utils.AutoUpdateAppUtils;
 import com.xulaoyao.android.jdi.autoupdate.view.AutoUpdateDialogFragment;
+
+import static com.xulaoyao.android.jdi.autoupdate.config.Constants.DOWNLOAD_SERVICE_ACTION_AUTO_DOWNLOAD_APK;
+import static com.xulaoyao.android.jdi.autoupdate.config.Constants.DOWNLOAD_SERVICE_APK_AUTO_DOWNLOAD;
+import static com.xulaoyao.android.jdi.autoupdate.config.Constants.DOWNLOAD_SERVICE_DOWNLOAD_COMPLETED_BROADCAST_ACTION;
+import static com.xulaoyao.android.jdi.autoupdate.config.Constants.DOWNLOAD_SERVICE_DOWNLOAD_COMPLETED_DATA_APK_FILE_PATH;
 
 /**
  * Created by renwoxing on 2017/8/4.
@@ -20,6 +32,7 @@ public class AutoUpdateManager {
 
 
     private Context mContext;
+    private Context mActivity;
     private String mJsonUrl;
 
 
@@ -27,20 +40,28 @@ public class AutoUpdateManager {
     private boolean mDismissNotificationProgress;
     private boolean mOnlyWifi;
     private boolean showLoading = false;
+    private boolean mSilentDownload = false;
 
     private AutoUpdateBean mUpdateApp;
+
+    //本地广播部分
+    private LocalBroadcastManager localBroadcastManager;
+    private AutoUpdateDownloadCompleteBroadcastReceiver broadcastReceiver;
+    private IntentFilter intentFilter;
 
 
     //private IAutoUpdateCallback mCallback;
 
 
     private AutoUpdateManager(Builder builder) {
-        mContext = builder.getContext();
+        mContext = builder.getContext().getApplicationContext();
+        mActivity = builder.getContext();
         mJsonUrl = builder.getJsonUrl();
         mShowIgnoreVersion = builder.isShowIgnoreVersion();
         mDismissNotificationProgress = builder.isDismissNotificationProgress();
         mOnlyWifi = builder.isOnlyWifi();
         showLoading = builder.showLoadingUpdate;
+        mSilentDownload = builder.mSilentDownload;
     }
 
 
@@ -68,7 +89,7 @@ public class AutoUpdateManager {
                 @Override
                 public void onCompleted(AutoUpdateBean autoUpdateBean) {
                     //成功获取json
-                    Log.d(TAG, "------ 获取 update json: \n" + autoUpdateBean.toString());
+                    //Log.d(TAG, "------ 获取 update json: \n" + autoUpdateBean.toString());
                     mUpdateApp = autoUpdateBean;
                     fillUpdateAppData();
                     checkNewApk(autoUpdateBean);
@@ -91,17 +112,44 @@ public class AutoUpdateManager {
         if (null == autoUpdateBean) {
             return;
         }
+        //大于本地版本更新
         if (autoUpdateBean.getVersionCode() > AutoUpdateAppUtils.getVersionCode(mContext)) {
-            Log.d(TAG, "有新本版本更新：" + autoUpdateBean.getVersionCode() + "|" + autoUpdateBean.getVersionName() + "\n" + autoUpdateBean.getMsg());
+            //Log.d(TAG, "有新本版本更新：" + autoUpdateBean.getVersionCode() + "|" + autoUpdateBean.getVersionName() + "\n" + autoUpdateBean.getMsg());
             // Done: 2017/8/9 new 此对象时 原对象没有释放，造成泄漏
             //AutoUpdateDialog.show(mContext, autoUpdateBean);
             //fix bug
-            AutoUpdateDialogFragment mAutoUpdateDialogFragment = AutoUpdateDialogFragment.newInstance(autoUpdateBean);
-            mAutoUpdateDialogFragment.show(((FragmentActivity) mContext).getSupportFragmentManager(), mJsonUrl);
+            if (mSilentDownload) {
+                //注册广播接收器
+                localBroadcastManager = LocalBroadcastManager.getInstance(mContext);
+                broadcastReceiver = new AutoUpdateDownloadCompleteBroadcastReceiver();
+                intentFilter = new IntentFilter(DOWNLOAD_SERVICE_DOWNLOAD_COMPLETED_BROADCAST_ACTION);
+                localBroadcastManager.registerReceiver(broadcastReceiver, intentFilter);
+                //需要静默下载
+                goToDownload(mContext, autoUpdateBean);
+
+            } else {
+                // 已在 LocalBroadcastManager 中调用
+            }
         } else {
             //Toast.makeText(mContext, mContext.getString(R.string.android_auto_update_toast_no_new_update), Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "没有新版本！");
+            //Log.d(TAG, "没有新版本！");
         }
+    }
+
+    /**
+     * 启动下载服务
+     *
+     * @param context
+     * @param autoUpdateBean
+     */
+    private void goToDownload(Context context, AutoUpdateBean autoUpdateBean) {
+        Intent intent = new Intent(context.getApplicationContext(), DownloadService.class);
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(Constants.DOWNLOAD_SERVICE_APK_AUTO_UPDATE_BEAN, autoUpdateBean);
+        bundle.putBoolean(DOWNLOAD_SERVICE_APK_AUTO_DOWNLOAD, mSilentDownload);
+        intent.setAction(DOWNLOAD_SERVICE_ACTION_AUTO_DOWNLOAD_APK);
+        intent.putExtras(bundle);
+        context.startService(intent);
     }
 
 
@@ -110,7 +158,8 @@ public class AutoUpdateManager {
         private Context mContext;
         //必须有  更新json url
         private String mJsonUrl;
-
+        //静默下载
+        private boolean mSilentDownload = false;
         private boolean mShowIgnoreVersion;
         private boolean dismissNotificationProgress;
         private boolean mOnlyWifi;
@@ -145,6 +194,12 @@ public class AutoUpdateManager {
          */
         public Builder setJsonUrl(String updateUrl) {
             mJsonUrl = updateUrl;
+            return this;
+        }
+
+
+        public Builder setSilentDownload(Boolean isSilentDownload) {
+            this.mSilentDownload = isSilentDownload;
             return this;
         }
 
@@ -210,4 +265,21 @@ public class AutoUpdateManager {
     }
 
 
+    private class AutoUpdateDownloadCompleteBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (DOWNLOAD_SERVICE_DOWNLOAD_COMPLETED_BROADCAST_ACTION.equals(action)) {
+                String apkFilePath = intent.getStringExtra(DOWNLOAD_SERVICE_DOWNLOAD_COMPLETED_DATA_APK_FILE_PATH);
+                Log.d("--", "service download completed. apk file path:" + apkFilePath);
+                if (apkFilePath != null) {
+                    //提示有更新
+                    AutoUpdateDialogFragment mAutoUpdateDialogFragment = AutoUpdateDialogFragment.newInstance(mUpdateApp, mSilentDownload, apkFilePath);
+                    mAutoUpdateDialogFragment.show(((FragmentActivity) mActivity).getSupportFragmentManager(), mJsonUrl);
+                    //取消注册广播,防止内存泄漏
+                    localBroadcastManager.unregisterReceiver(broadcastReceiver);
+                }
+            }
+        }
+    }
 }

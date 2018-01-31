@@ -15,6 +15,7 @@ public class MainActivity extends AppCompatActivity {
 
         new AutoUpdateManager.Builder()
                 .setContext(this)
+                .setSilentDownload(true)  //静默下载
                 .setJsonUrl("http://jxc-app.oss-cn-shenzhen.aliyuncs.com/download/jxonline_app/android/update.json")
                 .build()
                 .execute();

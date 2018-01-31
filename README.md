@@ -26,7 +26,7 @@ and auto update checker,download and install apk file.
 
 ```gradle
 dependencies {
-    compile 'com.xulaoyao.android.jdi:autoupdate:1.0.1'
+    compile 'com.xulaoyao.android.jdi:autoupdate:1.1.0'
 }
 ```
 
@@ -60,6 +60,7 @@ dependencies {
 ```java
 new AutoUpdateManager.Builder()
                 .setContext(this)
+                .setSilentDownload(true)  //静默下载
                 .setJsonUrl("http://git.jx-cloud.cc/release/smartclass-teacher-android/raw/master/update.json")
                 .build()
                 .execute();

@@ -1,13 +1,14 @@
 package com.xulaoyao.android.jdi.autoupdate.bean;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 /**
  * auto update json bean
  * Created by renwoxing on 2017/8/4.
  */
 
-public class AutoUpdateBean implements Serializable {
+public class AutoUpdateBean implements Parcelable {
 
     private static final long serialVersionUID = 1L;
 
@@ -29,6 +30,36 @@ public class AutoUpdateBean implements Serializable {
     private Long size;
     private String md5;
 
+    public AutoUpdateBean() {
+    }
+
+    protected AutoUpdateBean(Parcel in) {
+        versionCode = in.readInt();
+        versionName = in.readString();
+        url = in.readString();
+        msg = in.readString();
+        if (in.readByte() == 0) {
+            size = null;
+        } else {
+            size = in.readLong();
+        }
+        md5 = in.readString();
+        mShowIgnoreVersion = in.readByte() != 0;
+        mDismissNotificationProgress = in.readByte() != 0;
+        mOnlyWifi = in.readByte() != 0;
+    }
+
+    public static final Creator<AutoUpdateBean> CREATOR = new Creator<AutoUpdateBean>() {
+        @Override
+        public AutoUpdateBean createFromParcel(Parcel in) {
+            return new AutoUpdateBean(in);
+        }
+
+        @Override
+        public AutoUpdateBean[] newArray(int size) {
+            return new AutoUpdateBean[size];
+        }
+    };
 
     public void setVersionCode(int versionCode) {
         this.versionCode = versionCode;
@@ -119,5 +150,26 @@ public class AutoUpdateBean implements Serializable {
     }
 
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
 
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeInt(versionCode);
+        parcel.writeString(versionName);
+        parcel.writeString(url);
+        parcel.writeString(msg);
+        if (size == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeLong(size);
+        }
+        parcel.writeString(md5);
+        parcel.writeByte((byte) (mShowIgnoreVersion ? 1 : 0));
+        parcel.writeByte((byte) (mDismissNotificationProgress ? 1 : 0));
+        parcel.writeByte((byte) (mOnlyWifi ? 1 : 0));
+    }
 }
